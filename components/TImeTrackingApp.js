@@ -1,32 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Alert, AlertDescription } from "./ui/alert";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Clock, LogIn, LogOut, User } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // Environment variables with fallback for development
-const API_URL = typeof window !== 'undefined' ? 
-  window.env?.GOOGLE_SHEETS_API_URL || process.env.NEXT_PUBLIC_GOOGLE_SHEETS_API_URL : 
-  process.env.NEXT_PUBLIC_GOOGLE_SHEETS_API_URL;
+const API_URL = window.env?.GOOGLE_SHEETS_API_URL || 'YOUR_GOOGLE_APPS_SCRIPT_URL';
 const IS_DEV = !API_URL || API_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL';
-
-// Session management
-const SESSION_KEY = 'timeTrackingSession';
-
-const saveSession = (userData) => {
-  if (userData) {
-    localStorage.setItem(SESSION_KEY, JSON.stringify(userData));
-  } else {
-    localStorage.removeItem(SESSION_KEY);
-  }
-};
-
-const loadSession = () => {
-  if (typeof window === 'undefined') return null;
-  const savedSession = localStorage.getItem(SESSION_KEY);
-  return savedSession ? JSON.parse(savedSession) : null;
-};
 
 // API functions
 const api = {
@@ -63,6 +44,7 @@ const api = {
       return data;
     } catch (error) {
       console.error('Login error:', error);
+      // Handle specific error cases
       if (error.message.includes('NetworkError') || !navigator.onLine) {
         throw new Error('Cannot connect to the server. Please check your internet connection.');
       }
@@ -179,6 +161,22 @@ const api = {
   }
 };
 
+// Session management
+const SESSION_KEY = 'timeTrackingSession';
+
+const saveSession = (userData) => {
+  if (userData) {
+    localStorage.setItem(SESSION_KEY, JSON.stringify(userData));
+  } else {
+    localStorage.removeItem(SESSION_KEY);
+  }
+};
+
+const loadSession = () => {
+  const savedSession = localStorage.getItem(SESSION_KEY);
+  return savedSession ? JSON.parse(savedSession) : null;
+};
+
 const TimeTrackingApp = () => {
   const [user, setUser] = useState(() => loadSession());
   const [username, setUsername] = useState('');
@@ -188,6 +186,74 @@ const TimeTrackingApp = () => {
   const [error, setError] = useState('');
   const [statusMessage, setStatusMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  // Timer effect
+  useEffect(() => {
+    let timer;
+    if (currentEntry && !currentEntry.clockOut) {
+      const startTime = new Date(currentEntry.clockIn).getTime();
+      
+      // Update immediately
+      setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+      
+      // Then update every second
+      timer = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+    }
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [currentEntry]);
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  // Timer effect
+  useEffect(() => {
+    let timer;
+    if (currentEntry && !currentEntry.clockOut) {
+      const startTime = new Date(currentEntry.clockIn).getTime();
+      
+      // Update immediately
+      setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+      
+      // Then update every second
+      timer = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+    } else {
+      setElapsedTime(0);
+    }
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [currentEntry]);
+
+  // Format time for display
+  const formatTime = (date) => {
+    return new Date(date).toLocaleTimeString([], { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+  };
+
+  // Format elapsed time
+  const formatElapsedTime = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    const parts = [];
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (secs > 0 || parts.length === 0) parts.push(`${secs}s`);
+    
+    return parts.join(' ');
 
   // Check session validity on load
   useEffect(() => {
@@ -314,13 +380,31 @@ const TimeTrackingApp = () => {
     }, { sundayHours: 0, standardHours: 0 });
   };
 
-  const hours = calculateHours(timeEntries);
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter' && !loading) {
-      login();
-    }
+  // Format time for display
+  const formatTime = (date) => {
+    return new Date(date).toLocaleTimeString([], { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
   };
+
+  // Format elapsed time
+  const formatElapsedTime = (seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    const parts = [];
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0) parts.push(`${minutes}m`);
+    if (secs > 0 || parts.length === 0) parts.push(`${secs}s`);
+    
+    return parts.join(' ');
+  };
+  };
+
+  const hours = calculateHours(timeEntries);
 
   return (
     <div className="min-h-screen bg-slate-900 p-8">
@@ -352,7 +436,6 @@ const TimeTrackingApp = () => {
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="bg-slate-700 border-slate-600 text-slate-200 placeholder:text-slate-400"
-                  onKeyPress={handleKeyPress}
                 />
               </div>
               <div>
@@ -362,7 +445,7 @@ const TimeTrackingApp = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="bg-slate-700 border-slate-600 text-slate-200 placeholder:text-slate-400"
-                  onKeyPress={handleKeyPress}
+                  onKeyPress={(e) => e.key === 'Enter' && login()}
                 />
               </div>
               <Button 
@@ -395,24 +478,45 @@ const TimeTrackingApp = () => {
                 {!currentEntry ? (
                   <Button 
                     onClick={clockIn} 
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className="w-full bg-emerald-600 hover:bg-emerald-700"
                     disabled={loading}
                   >
                     {loading ? 'Processing...' : 'Clock In'}
                   </Button>
                 ) : (
-                  <Button 
-                    onClick={clockOut} 
-                    className="w-full bg-red-600 hover:bg-red-700"
-                    disabled={loading}
-                  >
-                    {loading ? 'Processing...' : 'Clock Out'}
-                  </Button>
+                  <>
+                    <Button 
+                      onClick={clockOut} 
+                      className="w-full bg-amber-600 hover:bg-amber-700"
+                      disabled={loading}
+                    >
+                      {loading ? 'Processing...' : 'Clock Out'}
+                    </Button>
+                    <div className="text-center text-amber-400 font-medium">
+                      Currently clocked in ({formatElapsedTime(elapsedTime)})
+                    </div>
+                  </>
                 )}
                 
                 <div className="space-y-2 p-4 bg-slate-700 rounded-lg">
-                  <p>Sunday Hours: {hours.sundayHours.toFixed(2)}</p>
-                  <p>Standard Hours: {hours.standardHours.toFixed(2)}</p>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-300">Clocked in:</span>
+                      <span className="text-emerald-400">
+                        {currentEntry ? formatTime(currentEntry.clockIn) : 'Not clocked in'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-300">Clocked out:</span>
+                      <span className={currentEntry ? "text-amber-400" : "text-slate-400"}>
+                        {currentEntry ? "Pending..." : "N/A"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="border-t border-slate-600 my-2 pt-2">
+                    <p>Sunday Hours: {hours.sundayHours.toFixed(2)}</p>
+                    <p>Standard Hours: {hours.standardHours.toFixed(2)}</p>
+                  </div>
                 </div>
 
                 {user.isAdmin && (
