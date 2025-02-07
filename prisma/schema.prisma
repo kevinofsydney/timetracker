@@ -1,0 +1,53 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  TRANSLATOR
+}
+
+enum ShiftType {
+  STANDARD
+  SUNDAY
+  EMERGENCY
+  OVERNIGHT
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  role          UserRole  @default(TRANSLATOR)
+  password      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  timeEntries   TimeEntry[]
+}
+
+model TimeEntry {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  shiftType     ShiftType @default(STANDARD)
+  clockIn       DateTime
+  clockOut      DateTime?
+  rawHours      Float?
+  roundedHours  Float?
+  edited        Boolean   @default(false)
+  editedBy      String?
+  editReason    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([clockIn])
+} 
