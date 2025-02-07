@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getServerSession } from 'next-auth'
 
 import { authOptions } from '@/lib/auth'
-import { SignInForm } from '@/components/auth/sign-in-form'
+import { SignInForm } from '@/app/components/auth/sign-in-form'
 
 export default async function SignInPage() {
   const session = await getServerSession(authOptions)

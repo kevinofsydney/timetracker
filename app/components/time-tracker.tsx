@@ -6,15 +6,15 @@ import { useSession } from 'next-auth/react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 
-import { Button } from '@/components/ui/button'
+import { Button } from '@/app/components/ui/button'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { useToast } from '@/components/ui/use-toast'
+} from '@/app/components/ui/select'
+import { useToast } from '@/app/components/ui/use-toast'
 
 interface TimeEntry {
   id: string

@@ -3,10 +3,10 @@
 import { useSession } from 'next-auth/react'
 import { useQuery } from '@tanstack/react-query'
 
-import { TimeTracker } from '@/components/time-tracker'
-import { TimeEntries } from '@/components/time-entries'
-import { AdminDashboard } from '@/components/admin-dashboard'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { TimeTracker } from '@/app/components/time-tracker'
+import TimeEntries from '@/app/components/time-entries'
+import { AdminDashboard } from '@/app/components/admin-dashboard'
+import { Card, CardContent, CardHeader, CardTitle } from '@/app/components/ui/card'
 
 export function Dashboard() {
   const { data: session } = useSession()

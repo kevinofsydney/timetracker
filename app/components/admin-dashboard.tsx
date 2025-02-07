@@ -3,15 +3,16 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
+import { useSession } from 'next-auth/react'
 
-import { Button } from '@/components/ui/button'
+import { Button } from '@/app/components/ui/button'
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
+} from '@/app/components/ui/card'
 import {
   Table,
   TableBody,
@@ -19,8 +20,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { useToast } from '@/components/ui/use-toast'
+} from '@/app/components/ui/table'
+import { useToast } from '@/app/components/ui/use-toast'
 
 interface TimeEntry {
   id: string
