@@ -28,12 +28,29 @@ interface TimeTrackerProps {
   activeEntry: TimeEntry | null
 }
 
+interface ApiError {
+  message: string
+  status?: number
+}
+
 export function TimeTracker({ activeEntry }: TimeTrackerProps) {
   const router = useRouter()
   const { data: session } = useSession()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [shiftType, setShiftType] = useState<TimeEntry['shiftType']>('STANDARD')
+
+  const handleError = (error: unknown) => {
+    const message = error instanceof Error 
+      ? error.message 
+      : 'An unexpected error occurred'
+    
+    toast({
+      title: "Error",
+      description: message,
+      variant: "destructive"
+    })
+  }
 
   const clockIn = useMutation({
     mutationFn: async () => {
@@ -48,7 +65,8 @@ export function TimeTracker({ activeEntry }: TimeTrackerProps) {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to clock in')
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to clock in')
       }
 
       return response.json()
@@ -60,18 +78,12 @@ export function TimeTracker({ activeEntry }: TimeTrackerProps) {
         description: 'You have successfully clocked in',
       })
     },
-    onError: () => {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to clock in. Please try again.',
-      })
-    },
+    onError: handleError
   })
 
   const clockOut = useMutation({
     mutationFn: async () => {
-      if (!activeEntry) return
+      if (!activeEntry) throw new Error('No active entry found')
 
       const response = await fetch(`/api/time-entries/${activeEntry.id}`, {
         method: 'PATCH',
@@ -84,7 +96,8 @@ export function TimeTracker({ activeEntry }: TimeTrackerProps) {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to clock out')
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to clock out')
       }
 
       return response.json()
@@ -96,13 +109,7 @@ export function TimeTracker({ activeEntry }: TimeTrackerProps) {
         description: 'You have successfully clocked out',
       })
     },
-    onError: () => {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to clock out. Please try again.',
-      })
-    },
+    onError: handleError
   })
 
   if (!session) {

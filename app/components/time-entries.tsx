@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useToast } from '@/components/ui/use-toast'
 
 interface TimeEntry {
   id: string
@@ -21,20 +22,38 @@ interface TimeEntry {
   clockOut: string | null
   rawHours: number | null
   roundedHours: number | null
+  user?: {
+    name: string
+    email: string
+  }
 }
 
 export function TimeEntries() {
   const { data: session } = useSession()
+  const { toast } = useToast()
 
-  const { data: entries, isLoading } = useQuery<TimeEntry[]>({
+  const { data: entries, isLoading, error } = useQuery<TimeEntry[]>({
     queryKey: ['time-entries'],
     queryFn: async () => {
       const response = await fetch('/api/time-entries')
       if (!response.ok) {
-        throw new Error('Failed to fetch time entries')
+        const error = await response.json()
+        throw new Error(error.message || 'Failed to fetch time entries')
       }
       return response.json()
     },
+    enabled: !!session,
+    onError: (error: unknown) => {
+      const message = error instanceof Error 
+        ? error.message 
+        : 'An unexpected error occurred'
+      
+      toast({
+        title: "Error",
+        description: message,
+        variant: "destructive"
+      })
+    }
   })
 
   if (!session) {
@@ -42,7 +61,27 @@ export function TimeEntries() {
   }
 
   if (isLoading) {
-    return <div>Loading...</div>
+    return (
+      <div className="flex items-center justify-center p-4">
+        <p className="text-sm text-muted-foreground">Loading time entries...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <p className="text-sm text-destructive">Failed to load time entries</p>
+      </div>
+    )
+  }
+
+  if (!entries?.length) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <p className="text-sm text-muted-foreground">No time entries found</p>
+      </div>
+    )
   }
 
   return (
@@ -57,7 +96,7 @@ export function TimeEntries() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {entries?.map((entry) => (
+        {entries.map((entry) => (
           <TableRow key={entry.id}>
             <TableCell>
               {format(new Date(entry.clockIn), 'MMM d, yyyy')}

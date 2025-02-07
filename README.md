@@ -25,7 +25,7 @@ This web-based application is designed to facilitate efficient time tracking for
 ### Clock-In/Clock-Out System
 
 - **Web-Based Interface:** Translators can clock in and out through a responsive web application.
-- **Session Persistence:** The application retains the translator’s clocked-in status even if they log out, switch browsers, or use a different device.
+- **Session Persistence:** The application retains the translator's clocked-in status even if they log out, switch browsers, or use a different device.
 - **Shift Type Selection:** Options to label shifts as Standard, Sunday, Emergency, or Overnight.
 - **Editable Entries:** Translators can edit their clock-in/out times, with all edits visibly labeled for transparency.
 - **Administrative Adjustments:** Administrators can manually adjust hours when necessary.
@@ -50,7 +50,7 @@ This web-based application is designed to facilitate efficient time tracking for
 
 - **Responsive Design:** Mobile-first design ensures optimal usability for translators on smartphones and tablets.
 - **Administrator Dashboard:** Accessible on both desktop and mobile devices, providing flexibility in managing reports and user accounts.
-- **Persistent State:** The application maintains the translator’s clock-in status across sessions and devices.
+- **Persistent State:** The application maintains the translator's clock-in status across sessions and devices.
 
 ## Technical Requirements
 
@@ -70,7 +70,7 @@ This web-based application is designed to facilitate efficient time tracking for
   - **Database Hosting:** Supabase provides managed PostgreSQL hosting with built-in authentication.
 
 - **Performance & Scalability:**
-  - **Caching:** Utilize Vercel’s edge functions to cache API responses for improved performance.
+  - **Caching:** Utilize Vercel's edge functions to cache API responses for improved performance.
   - **Rate Limiting:** Implement middleware to prevent excessive API calls and ensure system stability.
   - **Background Jobs:** Schedule tasks using Vercel's Edge Config or an external scheduler for routine maintenance and notifications.
 
@@ -90,4 +90,72 @@ This web-based application is designed to facilitate efficient time tracking for
 - **Hosting & Deployment:**
   - [Vercel](https://vercel.com/)
   - [Supabase](https://supabase.io/)
+
+## File Structure
+
+```
+├── app/
+│   ├── api/
+│   │   ├── admin/
+│   │   │   ├── reports/
+│   │   │   │   └── download/
+│   │   │   │       └── route.ts
+│   │   │   └── time-entries/
+│   │   │       └── route.ts
+│   │   └── time-entries/
+│   │       ├── [id]/
+│   │       │   └── route.ts
+│   │       ├── active/
+│   │       │   └── route.ts
+│   │       └── route.ts
+│   ├── auth/
+│   │   └── signin/
+│   │       └── page.tsx
+│   ├── components/
+│   │   ├── auth/
+│   │   │   └── sign-in-form.tsx
+│   │   ├── ui/
+│   │   │   ├── button.tsx
+│   │   │   ├── card.tsx
+│   │   │   ├── input.tsx
+│   │   │   ├── label.tsx
+│   │   │   ├── select.tsx
+│   │   │   ├── table.tsx
+│   │   │   ├── toast.tsx
+│   │   │   ├── toaster.tsx
+│   │   │   └── use-toast.ts
+│   │   ├── admin-dashboard.tsx
+│   │   ├── dashboard.tsx
+│   │   ├── providers.tsx
+│   │   ├── time-entries.tsx
+│   │   └── time-tracker.tsx
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── lib/
+│   ├── auth.ts
+│   ├── prisma.ts
+│   └── utils.ts
+├── prisma/
+│   ├── schema.prisma
+│   └── seed.ts
+├── types/
+│   └── next-auth.d.ts
+├── .env
+├── .env.example
+├── next.config.js
+├── package.json
+├── tailwind.config.js
+└── tsconfig.json
+```
+
+## Key Directories
+
+- `app/`: Next.js 13+ app directory containing routes and components
+- `app/api/`: API routes for handling backend functionality
+- `app/components/`: React components organized by feature
+- `app/components/ui/`: Reusable UI components
+- `lib/`: Utility functions and configurations
+- `prisma/`: Database schema and migrations
+- `types/`: TypeScript type definitions
 
