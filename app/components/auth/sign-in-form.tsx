@@ -2,11 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { signIn } from 'next-auth/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import Link from 'next/link'
 
 import { Button } from '@/app/components/ui/button'
 import { Input } from '@/app/components/ui/input'
@@ -47,14 +47,19 @@ export function SignInForm() {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: 'Invalid email or password',
+          description: result.error,
         })
         return
+      }
+
+      if (!result?.ok) {
+        throw new Error('Something went wrong')
       }
 
       router.refresh()
       router.push('/')
     } catch (error) {
+      console.error('Sign in error:', error)
       toast({
         variant: 'destructive',
         title: 'Error',

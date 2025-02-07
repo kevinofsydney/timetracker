@@ -12,6 +12,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/auth/signin',
+    error: '/auth/error',
   },
   providers: [
     CredentialsProvider({
@@ -21,55 +22,55 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null
-        }
+        try {
+          if (!credentials?.email || !credentials?.password) {
+            throw new Error('Please enter your email and password')
+          }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email,
-          },
-        })
+          const user = await prisma.user.findUnique({
+            where: {
+              email: credentials.email,
+            },
+          })
 
-        if (!user) {
-          return null
-        }
+          if (!user) {
+            throw new Error('Invalid email or password')
+          }
 
-        const isPasswordValid = await compare(credentials.password, user.password)
+          const isPasswordValid = await compare(credentials.password, user.password)
 
-        if (!isPasswordValid) {
-          return null
-        }
+          if (!isPasswordValid) {
+            throw new Error('Invalid email or password')
+          }
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          }
+        } catch (error) {
+          console.error('Auth error:', error)
+          throw error
         }
       },
     }),
   ],
   callbacks: {
-    session: ({ session, token }) => {
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: token.id,
-          role: token.role,
-        },
-      }
-    },
-    jwt: ({ token, user }) => {
+    async jwt({ token, user }) {
       if (user) {
-        return {
-          ...token,
-          id: user.id,
-          role: user.role,
-        }
+        token.id = user.id
+        token.role = user.role
       }
       return token
     },
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id as string
+        session.user.role = token.role as 'ADMIN' | 'TRANSLATOR'
+      }
+      return session
+    },
   },
+  debug: process.env.NODE_ENV === 'development',
 } 

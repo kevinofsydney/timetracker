@@ -54,29 +54,35 @@ export function SignUpForm() {
         }),
       })
 
+      const result = await response.json()
+
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to create account')
+        throw new Error(result.message || 'Failed to create account')
       }
 
-      const result = await signIn('credentials', {
+      const signInResult = await signIn('credentials', {
         email: data.email,
         password: data.password,
         redirect: false,
       })
 
-      if (result?.error) {
+      if (signInResult?.error) {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: 'Failed to sign in after registration',
+          description: signInResult.error,
         })
         return
+      }
+
+      if (!signInResult?.ok) {
+        throw new Error('Failed to sign in after registration')
       }
 
       router.refresh()
       router.push('/')
     } catch (error) {
+      console.error('Sign up error:', error)
       toast({
         variant: 'destructive',
         title: 'Error',
