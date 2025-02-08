@@ -13,6 +13,7 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: '/auth/signin',
     error: '/auth/error',
+    signOut: '/auth/signin',
   },
   providers: [
     CredentialsProvider({
@@ -30,6 +31,13 @@ export const authOptions: NextAuthOptions = {
           const user = await prisma.user.findUnique({
             where: {
               email: credentials.email,
+            },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              password: true,
+              role: true,
             },
           })
 
@@ -59,17 +67,23 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id
-        token.role = user.role
+        return {
+          ...token,
+          id: user.id,
+          role: user.role,
+        }
       }
       return token
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string
-        session.user.role = token.role as 'ADMIN' | 'TRANSLATOR'
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id as string,
+          role: token.role as 'ADMIN' | 'TRANSLATOR',
+        },
       }
-      return session
     },
   },
   debug: process.env.NODE_ENV === 'development',

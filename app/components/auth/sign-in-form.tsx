@@ -41,9 +41,14 @@ export function SignInForm() {
         email: data.email,
         password: data.password,
         redirect: false,
+        callbackUrl: '/',
       })
 
-      if (result?.error) {
+      if (!result) {
+        throw new Error('Something went wrong')
+      }
+
+      if (result.error) {
         toast({
           variant: 'destructive',
           title: 'Error',
@@ -52,18 +57,13 @@ export function SignInForm() {
         return
       }
 
-      if (!result?.ok) {
-        throw new Error('Something went wrong')
-      }
-
-      router.refresh()
-      router.push('/')
+      router.push(result.url || '/')
     } catch (error) {
       console.error('Sign in error:', error)
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        description: error instanceof Error ? error.message : 'Something went wrong. Please try again.',
       })
     } finally {
       setIsLoading(false)

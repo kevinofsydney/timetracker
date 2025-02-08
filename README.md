@@ -102,6 +102,11 @@ This web-based application is designed to facilitate efficient time tracking for
 │   │   │   │       └── route.ts
 │   │   │   └── time-entries/
 │   │   │       └── route.ts
+│   │   ├── auth/
+│   │   │   ├── [...nextauth]/
+│   │   │   │   └── route.ts
+│   │   │   └── register/
+│   │   │       └── route.ts
 │   │   └── time-entries/
 │   │       ├── [id]/
 │   │       │   └── route.ts
@@ -109,11 +114,16 @@ This web-based application is designed to facilitate efficient time tracking for
 │   │       │   └── route.ts
 │   │       └── route.ts
 │   ├── auth/
-│   │   └── signin/
+│   │   ├── error/
+│   │   │   └── page.tsx
+│   │   ├── signin/
+│   │   │   └── page.tsx
+│   │   └── signup/
 │   │       └── page.tsx
 │   ├── components/
 │   │   ├── auth/
-│   │   │   └── sign-in-form.tsx
+│   │   │   ├── sign-in-form.tsx
+│   │   │   └── sign-up-form.tsx
 │   │   ├── ui/
 │   │   │   ├── button.tsx
 │   │   │   ├── card.tsx
@@ -129,6 +139,8 @@ This web-based application is designed to facilitate efficient time tracking for
 │   │   ├── providers.tsx
 │   │   ├── time-entries.tsx
 │   │   └── time-tracker.tsx
+│   ├── lib/
+│   │   └── utils.ts
 │   ├── globals.css
 │   ├── layout.tsx
 │   └── page.tsx
@@ -137,8 +149,12 @@ This web-based application is designed to facilitate efficient time tracking for
 │   ├── prisma.ts
 │   └── utils.ts
 ├── prisma/
+│   ├── migrations/
+│   │   └── [timestamp]_init/
+│   │       └── migration.sql
 │   ├── schema.prisma
-│   └── seed.ts
+│   ├── seed.ts
+│   └── tsconfig.json
 ├── types/
 │   └── next-auth.d.ts
 ├── .env
@@ -149,13 +165,96 @@ This web-based application is designed to facilitate efficient time tracking for
 └── tsconfig.json
 ```
 
-## Key Directories
+## Key Directories and Files
 
-- `app/`: Next.js 13+ app directory containing routes and components
-- `app/api/`: API routes for handling backend functionality
-- `app/components/`: React components organized by feature
-- `app/components/ui/`: Reusable UI components
-- `lib/`: Utility functions and configurations
-- `prisma/`: Database schema and migrations
-- `types/`: TypeScript type definitions
+### `/app` - Next.js App Router
+- `/api` - API routes for backend functionality
+  - `/admin` - Admin-specific endpoints
+  - `/auth` - Authentication endpoints
+    - `/[...nextauth]` - NextAuth.js API route handler
+    - `/register` - User registration endpoint
+  - `/time-entries` - Time entry management endpoints
+- `/auth` - Authentication pages
+  - `/error` - Error handling page
+  - `/signin` - Sign-in page
+  - `/signup` - Sign-up page
+- `/components` - React components
+  - `/auth` - Authentication-related components
+  - `/ui` - Reusable UI components
+  - Root-level components for main features
+
+### `/lib` - Utility Functions and Configurations
+- `auth.ts` - NextAuth.js configuration
+- `prisma.ts` - Prisma client configuration
+- `utils.ts` - Shared utility functions
+
+### `/prisma` - Database Configuration
+- `schema.prisma` - Database schema definition
+- `migrations` - Database migration files
+- `seed.ts` - Database seeding script
+- `tsconfig.json` - TypeScript configuration for Prisma
+
+### `/types` - TypeScript Type Definitions
+- `next-auth.d.ts` - NextAuth.js type extensions
+
+### Root Configuration Files
+- `.env` - Environment variables
+- `next.config.js` - Next.js configuration
+- `package.json` - Project dependencies and scripts
+- `tailwind.config.js` - Tailwind CSS configuration
+- `tsconfig.json` - TypeScript configuration
+
+## Component Structure
+
+### UI Components
+- `button.tsx` - Reusable button component
+- `card.tsx` - Card container component
+- `input.tsx` - Form input component
+- `label.tsx` - Form label component
+- `select.tsx` - Dropdown select component
+- `table.tsx` - Data table component
+- `toast.tsx` - Toast notification component
+- `toaster.tsx` - Toast notification manager
+- `use-toast.ts` - Toast hook utility
+
+### Feature Components
+- `admin-dashboard.tsx` - Admin dashboard view
+- `dashboard.tsx` - Main user dashboard
+- `time-entries.tsx` - Time entries display
+- `time-tracker.tsx` - Time tracking interface
+- `providers.tsx` - Application providers wrapper
+
+### Authentication Components
+- `sign-in-form.tsx` - Sign-in form
+- `sign-up-form.tsx` - Sign-up form
+
+## Troubleshooting
+
+### Authentication Issues
+
+#### 404 Error During Login
+If you encounter a 404 error when attempting to log in (regardless of correct credentials), this typically indicates a missing NextAuth.js API route configuration in the App Router format.
+
+**Solution:**
+1. Create the file `app/api/auth/[...nextauth]/route.ts`
+2. Add the following configuration:
+```typescript
+import NextAuth from 'next-auth'
+import { authOptions } from '@/lib/auth'
+
+const handler = NextAuth(authOptions)
+
+export { handler as GET, handler as POST }
+```
+
+This configuration is required because:
+- Next.js 13+ with App Router requires specific API route handling
+- NextAuth.js expects this route to handle all authentication requests
+- The route creates necessary endpoints under `/api/auth/*` for:
+  - Sign in/out
+  - Session handling
+  - Callbacks
+  - JWT operations
+
+[Rest of the README remains unchanged...]
 
