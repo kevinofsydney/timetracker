@@ -256,5 +256,20 @@ This configuration is required because:
   - Callbacks
   - JWT operations
 
+### Database Connection Issues
+
+#### Can't Reach Database Server Error
+If you encounter an error like "Can't reach database server at 'aws-0-ap-southeast-2.pooler.supabase.com:6543'", this is likely due to an incorrect port number in the DATABASE_URL.
+
+**Solution:**
+When deploying to Vercel, ensure your `DATABASE_URL` environment variable uses port `6543` (not `5432`) for Supabase connection:
+
+```bash
+# Correct format for Supabase Pooler connection
+DATABASE_URL="postgresql://[user]:[password]@aws-0-ap-southeast-2.pooler.supabase.com:6543/postgres"
+```
+
+Note: While `DIRECT_URL` should remain on port `5432`, the `DATABASE_URL` must use port `6543` for Supabase's connection pooler to work properly in production.
+
 [Rest of the README remains unchanged...]
 
