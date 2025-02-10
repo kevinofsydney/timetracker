@@ -16,9 +16,14 @@ import { useToast } from '@/app/components/ui/use-toast'
 
 interface TimeEntry {
   id: string
-  date: string
-  hours: number
-  description: string
+  clockIn: string
+  clockOut: string | null
+  shiftType: 'STANDARD' | 'SUNDAY' | 'EMERGENCY' | 'OVERNIGHT'
+  rawHours: number | null
+  roundedHours: number | null
+  edited: boolean
+  editReason?: string
+  concert: string
 }
 
 export default function TimeEntries() {
@@ -51,17 +56,23 @@ export default function TimeEntries() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Date</TableHead>
+              <TableHead>Clock In</TableHead>
+              <TableHead>Clock Out</TableHead>
+              <TableHead>Concert</TableHead>
+              <TableHead>Shift Type</TableHead>
               <TableHead>Hours</TableHead>
-              <TableHead>Description</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {timeEntries.map((entry: TimeEntry) => (
               <TableRow key={entry.id}>
-                <TableCell>{format(new Date(entry.date), 'PPP')}</TableCell>
-                <TableCell>{entry.hours}</TableCell>
-                <TableCell>{entry.description}</TableCell>
+                <TableCell>{format(new Date(entry.clockIn), 'PPP p')}</TableCell>
+                <TableCell>
+                  {entry.clockOut ? format(new Date(entry.clockOut), 'PPP p') : 'Active'}
+                </TableCell>
+                <TableCell>{entry.concert}</TableCell>
+                <TableCell>{entry.shiftType}</TableCell>
+                <TableCell>{entry.roundedHours ?? '-'}</TableCell>
               </TableRow>
             ))}
           </TableBody>
