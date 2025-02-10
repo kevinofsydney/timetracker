@@ -1,44 +1,71 @@
-import { mockDeep, DeepMockProxy } from 'jest-mock-extended'
 import { PrismaClient, UserRole } from '@prisma/client'
-import { prisma } from '@/lib/prisma'
-import { main } from '../create-admin'
+import { DeepMockProxy } from 'jest-mock-extended'
+import { createMockContext } from './helpers/setup'
 
-const prismaMock = prisma as unknown as DeepMockProxy<PrismaClient>
+// Mock Prisma before importing modules that use it
+const mockContext = createMockContext()
+jest.mock('@/lib/prisma', () => ({
+  prisma: mockContext.prisma,
+  __esModule: true,
+}))
 
-describe('create-admin', () => {
+// Import after mocking
+import { createAdmin } from '../create-admin'
+
+describe('create-admin script', () => {
+  let prismaMock: DeepMockProxy<PrismaClient>
+
   beforeEach(() => {
+    jest.resetModules()
+    prismaMock = mockContext.prisma
+  })
+
+  afterEach(() => {
     jest.clearAllMocks()
   })
 
-  test('should create a new admin user', async () => {
+  it('should create a new admin user', async () => {
     const mockUser = {
       id: '1',
-      email: 'kevin@courant.live',
-      name: 'Kevin Gatdula',
+      email: 'test@example.com',
+      name: 'Test User',
       role: UserRole.ADMIN,
       password: 'hashedPassword',
       createdAt: new Date(),
       updatedAt: new Date(),
     }
 
-    prismaMock.user.create.mockResolvedValue(mockUser)
+    prismaMock.user.findUnique.mockResolvedValueOnce(null)
+    prismaMock.user.create.mockResolvedValueOnce(mockUser)
 
-    await expect(main()).resolves.not.toThrow()
+    const result = await createAdmin('test@example.com', 'Test User', 'password123')
+    expect(result.success).toBe(true)
+    expect(result.user).toEqual(mockUser)
   })
 
-  test('should handle existing user error', async () => {
-    prismaMock.user.create.mockRejectedValue({
-      code: 'P2002',
-      clientVersion: '5.x',
-    })
+  it('should handle existing user', async () => {
+    const mockUser = {
+      id: '1',
+      email: 'test@example.com',
+      name: 'Test User',
+      role: UserRole.ADMIN,
+      password: 'hashedPassword',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }
 
-    await expect(main()).resolves.not.toThrow()
+    prismaMock.user.findUnique.mockResolvedValueOnce(mockUser)
+
+    const result = await createAdmin('test@example.com', 'Test User', 'password123')
+    expect(result.success).toBe(false)
+    expect(result.message).toBe('User already exists')
   })
 
-  test('should handle other errors', async () => {
-    const testError = new Error('Test error')
-    prismaMock.user.create.mockRejectedValue(testError)
+  it('should handle database errors', async () => {
+    prismaMock.user.findUnique.mockRejectedValueOnce(new Error('Database error'))
 
-    await expect(main()).resolves.not.toThrow()
+    const result = await createAdmin('test@example.com', 'Test User', 'password123')
+    expect(result.success).toBe(false)
+    expect(result.message).toBe('Failed to create user')
   })
 }) 

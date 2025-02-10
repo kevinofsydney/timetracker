@@ -1,77 +1,80 @@
 import { getServerSession } from 'next-auth'
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
-
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { TimeEntrySchema } from '@/lib/validations/time-entry'
 
-const createTimeEntrySchema = z.object({
-  shiftType: z.enum(['STANDARD', 'SUNDAY', 'EMERGENCY', 'OVERNIGHT']),
-  concert: z.string().min(1, 'Concert name is required'),
-})
-
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session) {
-      return new Response('Unauthorized', { status: 401 })
+    if (!session?.user) {
+      return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const json = await req.json()
-    const body = createTimeEntrySchema.parse(json)
-
-    const existingActiveEntry = await prisma.timeEntry.findFirst({
-      where: {
-        userId: session.user.id,
-        clockOut: null,
-      },
-    })
-
-    if (existingActiveEntry) {
-      return new NextResponse('You already have an active time entry', {
-        status: 400,
-      })
-    }
+    const body = await request.json()
+    const validatedData = TimeEntrySchema.parse(body)
 
     const timeEntry = await prisma.timeEntry.create({
       data: {
         userId: session.user.id,
-        shiftType: body.shiftType,
-        concert: body.concert,
+        shiftType: validatedData.shiftType,
+        concertId: validatedData.concertId,
         clockIn: new Date().toISOString(),
+      },
+      include: {
+        concert: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
       },
     })
 
     return NextResponse.json(timeEntry)
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return new NextResponse(JSON.stringify(error.issues), { status: 422 })
-    }
     console.error('Error creating time entry:', error)
-    return new NextResponse('Error creating time entry', { status: 500 })
+    return new NextResponse('Internal Server Error', { status: 500 })
   }
 }
 
-export async function GET(req: Request) {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
+
+    const { searchParams } = new URL(request.url)
+    const start = searchParams.get('start')
+    const end = searchParams.get('end')
 
     const timeEntries = await prisma.timeEntry.findMany({
       where: {
         userId: session.user.id,
+        clockIn: {
+          gte: start ? new Date(start) : undefined,
+          lte: end ? new Date(end) : undefined,
+        },
+      },
+      include: {
+        concert: true,
+        user: {
+          select: {
+            name: true,
+            email: true,
+          },
+        },
       },
       orderBy: {
         clockIn: 'desc',
       },
-      take: 10,
     })
 
     return NextResponse.json(timeEntries)
   } catch (error) {
-    return new NextResponse('Internal Error', { status: 500 })
+    console.error('Error fetching time entries:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
   }
 } 

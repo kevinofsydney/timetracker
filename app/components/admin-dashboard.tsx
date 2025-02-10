@@ -22,6 +22,9 @@ import {
   TableRow,
 } from '@/app/components/ui/table'
 import { useToast } from '@/app/components/ui/use-toast'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
+import { ConcertManagement } from '@/app/components/concert-management'
+import { ConcertList } from '@/app/components/concert-list'
 
 interface TimeEntry {
   id: string
@@ -99,93 +102,23 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Generate Report</CardTitle>
-          <CardDescription>
-            Download a CSV report of time entries for a specific date range
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-end gap-4">
-            <div className="grid gap-2">
-              <label htmlFor="start-date">Start Date</label>
-              <input
-                type="date"
-                id="start-date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="rounded-md border px-3 py-2"
-              />
-            </div>
-            <div className="grid gap-2">
-              <label htmlFor="end-date">End Date</label>
-              <input
-                type="date"
-                id="end-date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="rounded-md border px-3 py-2"
-              />
-            </div>
-            <Button onClick={downloadReport}>Download Report</Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Time Entries</CardTitle>
-          <CardDescription>View and manage all time entries</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Translator</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Shift Type</TableHead>
-                <TableHead>Clock In</TableHead>
-                <TableHead>Clock Out</TableHead>
-                <TableHead>Hours</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {entries?.map((entry) => (
-                <TableRow key={entry.id}>
-                  <TableCell>{entry.user.name}</TableCell>
-                  <TableCell>
-                    {format(new Date(entry.clockIn), 'MMM d, yyyy')}
-                  </TableCell>
-                  <TableCell className="capitalize">
-                    {entry.shiftType.toLowerCase()}
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(entry.clockIn), 'h:mm a')}
-                  </TableCell>
-                  <TableCell>
-                    {entry.clockOut
-                      ? format(new Date(entry.clockOut), 'h:mm a')
-                      : 'Active'}
-                  </TableCell>
-                  <TableCell>
-                    {entry.roundedHours ? `${entry.roundedHours} hrs` : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {entry.edited ? (
-                      <span className="text-sm text-yellow-600">Edited</span>
-                    ) : (
-                      <span className="text-sm text-green-600">Original</span>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+    <div className="space-y-6 p-6">
+      <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+      
+      <Tabs defaultValue="manage" className="w-full">
+        <TabsList>
+          <TabsTrigger value="manage">Manage Concerts</TabsTrigger>
+          <TabsTrigger value="list">Concert List</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="manage">
+          <ConcertManagement />
+        </TabsContent>
+        
+        <TabsContent value="list">
+          <ConcertList />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 } 
