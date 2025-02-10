@@ -7,14 +7,14 @@ import { prisma } from '@/lib/prisma'
 
 const createTimeEntrySchema = z.object({
   shiftType: z.enum(['STANDARD', 'SUNDAY', 'EMERGENCY', 'OVERNIGHT']),
+  concert: z.string().min(1, 'Concert name is required'),
 })
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions)
-
-    if (!session?.user?.id) {
-      return new NextResponse('Unauthorized', { status: 401 })
+    if (!session) {
+      return new Response('Unauthorized', { status: 401 })
     }
 
     const json = await req.json()
@@ -37,6 +37,7 @@ export async function POST(req: Request) {
       data: {
         userId: session.user.id,
         shiftType: body.shiftType,
+        concert: body.concert,
         clockIn: new Date().toISOString(),
       },
     })
@@ -46,8 +47,8 @@ export async function POST(req: Request) {
     if (error instanceof z.ZodError) {
       return new NextResponse(JSON.stringify(error.issues), { status: 422 })
     }
-
-    return new NextResponse('Internal Error', { status: 500 })
+    console.error('Error creating time entry:', error)
+    return new NextResponse('Error creating time entry', { status: 500 })
   }
 }
 

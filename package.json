@@ -8,7 +8,12 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
-    "db:seed": "cd prisma && ts-node seed.ts"
+    "db:seed": "cd prisma && ts-node seed.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:ci": "jest --ci",
+    "deploy": "./scripts/deploy.sh",
+    "deploy:prod": "NODE_ENV=production ./scripts/deploy.sh"
   },
   "prisma": {
     "seed": "cd prisma && ts-node seed.ts"
