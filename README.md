@@ -25,11 +25,14 @@ A time tracking application for translators.
 │   │   ├── ui/
 │   │   │   ├── avatar.tsx
 │   │   │   ├── button.tsx
+│   │   │   ├── calendar.tsx
 │   │   │   ├── card.tsx
 │   │   │   ├── dropdown-menu.tsx
+│   │   │   ├── error-boundary.tsx
 │   │   │   ├── form.tsx
 │   │   │   ├── input.tsx
 │   │   │   ├── label.tsx
+│   │   │   ├── popover.tsx
 │   │   │   ├── select.tsx
 │   │   │   ├── switch.tsx
 │   │   │   ├── table.tsx
@@ -85,13 +88,14 @@ A time tracking application for translators.
 └── tsconfig.json
 ```
 
-## Key Features
+## Features
 
 - Authentication with NextAuth.js
 - Role-based access control (Admin/Translator)
 - Concert management for admins
 - Time tracking for translators
 - Real-time updates
+- Error handling and reporting
 - Responsive design
 
 ## Tech Stack
