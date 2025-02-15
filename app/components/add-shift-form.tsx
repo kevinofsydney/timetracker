@@ -181,6 +181,7 @@ export function AddShiftForm({ onSuccess }: AddShiftFormProps) {
                     date={field.value}
                     setDate={field.onChange}
                     disabled={addShiftMutation.isPending}
+                    clockInDate={form.watch('clockIn')}
                   />
                 </FormControl>
                 <FormMessage />

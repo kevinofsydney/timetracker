@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Calendar as CalendarIcon } from "lucide-react"
+import { Calendar as CalendarIcon, Check, X } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { Button } from "@/app/components/ui/button"
@@ -23,10 +23,27 @@ interface DateTimePickerProps {
   date: Date | undefined
   setDate: (date: Date | undefined) => void
   disabled?: boolean
+  clockInDate?: Date // Add this to get the clock-in date for reference
 }
 
-export function DateTimePicker({ date, setDate, disabled }: DateTimePickerProps) {
-  // Generate minute options in 5-minute increments
+export function DateTimePicker({ 
+  date, 
+  setDate, 
+  disabled,
+  clockInDate 
+}: DateTimePickerProps) {
+  const [isOpen, setIsOpen] = React.useState(false)
+  const [tempDate, setTempDate] = React.useState<Date | undefined>(date)
+
+  // When clockInDate changes and this is a clock-out picker, set the default date
+  React.useEffect(() => {
+    if (clockInDate && !date) {
+      const defaultDate = new Date(clockInDate)
+      defaultDate.setHours(clockInDate.getHours() + 1) // Default to 1 hour after clock in
+      setTempDate(defaultDate)
+    }
+  }, [clockInDate, date])
+
   const minuteOptions = []
   for (let i = 0; i < 60; i += 5) {
     minuteOptions.push(i.toString().padStart(2, "0"))
@@ -37,8 +54,18 @@ export function DateTimePicker({ date, setDate, disabled }: DateTimePickerProps)
     hourOptions.push(i.toString().padStart(2, "0"))
   }
 
+  const handleDone = () => {
+    setDate(tempDate)
+    setIsOpen(false)
+  }
+
+  const handleCancel = () => {
+    setTempDate(date)
+    setIsOpen(false)
+  }
+
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
           variant={"outline"}
@@ -53,57 +80,58 @@ export function DateTimePicker({ date, setDate, disabled }: DateTimePickerProps)
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={(selectedDate) => {
-            if (selectedDate) {
-              const newDate = new Date(selectedDate)
-              if (date) {
-                // Preserve the time when changing the date
-                newDate.setHours(date.getHours())
-                newDate.setMinutes(date.getMinutes())
+        <div className="p-3">
+          <Calendar
+            mode="single"
+            selected={tempDate}
+            onSelect={(selectedDate) => {
+              if (selectedDate) {
+                const newDate = new Date(selectedDate)
+                if (tempDate) {
+                  newDate.setHours(tempDate.getHours())
+                  newDate.setMinutes(tempDate.getMinutes())
+                }
+                setTempDate(newDate)
               }
-              setDate(newDate)
-            }
-          }}
-          initialFocus
-          disabled={(date) => date > new Date()}
-          weekStartsOn={1} // Start week on Monday
-          classNames={{
-            head_cell: "font-normal text-muted-foreground",
-            cell: cn(
-              "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-            ),
-            day: cn(
-              "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
-            ),
-            day_selected:
-              "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
-            day_today: "bg-accent text-accent-foreground",
-            day_outside: "text-muted-foreground opacity-50",
-            day_disabled: "text-muted-foreground opacity-50",
-            day_range_middle:
-              "aria-selected:bg-accent aria-selected:text-accent-foreground",
-            day_hidden: "invisible",
-            nav_button: cn(
-              "border-0 hover:opacity-100 opacity-50"
-            ),
-          }}
-        />
+            }}
+            initialFocus
+            disabled={(date) => date > new Date()}
+            weekStartsOn={1}
+            classNames={{
+              head_cell: "font-normal text-muted-foreground",
+              cell: cn(
+                "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+              ),
+              day: cn(
+                "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+              ),
+              day_selected:
+                "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+              day_today: "bg-accent text-accent-foreground",
+              day_outside: "text-muted-foreground opacity-30", // Make outside days more transparent
+              day_disabled: "text-muted-foreground opacity-50",
+              day_range_middle:
+                "aria-selected:bg-accent aria-selected:text-accent-foreground",
+              day_hidden: "invisible",
+              nav_button: cn(
+                "border-0 hover:opacity-100 opacity-50"
+              ),
+            }}
+          />
+        </div>
         <div className="border-t border-border p-3 space-y-3">
           <div className="flex gap-2">
             <Select
-              value={date ? date.getHours().toString().padStart(2, "0") : ""}
+              value={tempDate ? tempDate.getHours().toString().padStart(2, "0") : ""}
               onValueChange={(hour) => {
-                if (date) {
-                  const newDate = new Date(date)
+                if (tempDate) {
+                  const newDate = new Date(tempDate)
                   newDate.setHours(parseInt(hour))
-                  setDate(newDate)
+                  setTempDate(newDate)
                 } else {
                   const newDate = new Date()
                   newDate.setHours(parseInt(hour))
-                  setDate(newDate)
+                  setTempDate(newDate)
                 }
               }}
             >
@@ -119,16 +147,16 @@ export function DateTimePicker({ date, setDate, disabled }: DateTimePickerProps)
               </SelectContent>
             </Select>
             <Select
-              value={date ? (Math.floor(date.getMinutes() / 5) * 5).toString().padStart(2, "0") : ""}
+              value={tempDate ? (Math.floor(tempDate.getMinutes() / 5) * 5).toString().padStart(2, "0") : ""}
               onValueChange={(minute) => {
-                if (date) {
-                  const newDate = new Date(date)
+                if (tempDate) {
+                  const newDate = new Date(tempDate)
                   newDate.setMinutes(parseInt(minute))
-                  setDate(newDate)
+                  setTempDate(newDate)
                 } else {
                   const newDate = new Date()
                   newDate.setMinutes(parseInt(minute))
-                  setDate(newDate)
+                  setTempDate(newDate)
                 }
               }}
             >
@@ -143,6 +171,23 @@ export function DateTimePicker({ date, setDate, disabled }: DateTimePickerProps)
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="flex justify-end gap-2 pt-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleCancel}
+            >
+              <X className="h-4 w-4 mr-1" />
+              Cancel
+            </Button>
+            <Button 
+              size="sm"
+              onClick={handleDone}
+            >
+              <Check className="h-4 w-4 mr-1" />
+              Done
+            </Button>
           </div>
         </div>
       </PopoverContent>
