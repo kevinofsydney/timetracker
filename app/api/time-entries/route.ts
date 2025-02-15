@@ -22,11 +22,7 @@ export async function POST(request: Request) {
         shiftType: validatedData.shiftType,
       },
       include: {
-        concert: {
-          select: {
-            name: true,
-          },
-        },
+        concert: true,
       },
     })
 
@@ -56,21 +52,10 @@ export async function GET(request: Request) {
           lte: end ? new Date(end) : undefined,
         },
       },
-      select: {
-        id: true,
-        clockIn: true,
-        clockOut: true,
-        roundedHours: true,
-        shiftType: true,
+      include: {
         concert: {
           select: {
             name: true,
-          },
-        },
-        user: {
-          select: {
-            name: true,
-            email: true,
           },
         },
       },
