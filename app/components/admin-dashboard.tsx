@@ -108,7 +108,7 @@ export function AdminDashboard() {
         <TabsList>
           <TabsTrigger value="concerts">Concerts</TabsTrigger>
           <TabsTrigger value="translators">Translators</TabsTrigger>
-          <TabsTrigger value="manage">Manage Concerts</TabsTrigger>
+          <TabsTrigger value="add">Add a Concert</TabsTrigger>
         </TabsList>
         
         <TabsContent value="concerts">
@@ -118,8 +118,8 @@ export function AdminDashboard() {
         <TabsContent value="translators">
           <TranslatorList />
         </TabsContent>
-        
-        <TabsContent value="manage">
+
+        <TabsContent value="add">
           <ConcertManagement />
         </TabsContent>
       </Tabs>
