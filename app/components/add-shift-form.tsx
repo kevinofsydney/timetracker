@@ -47,7 +47,11 @@ const formSchema = z.object({
   path: ["clockOut"],
 });
 
-export function AddShiftForm() {
+interface AddShiftFormProps {
+  onSuccess?: () => void
+}
+
+export function AddShiftForm({ onSuccess }: AddShiftFormProps) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const form = useForm<z.infer<typeof formSchema>>({
@@ -82,6 +86,7 @@ export function AddShiftForm() {
         description: 'Shift added successfully',
       })
       form.reset()
+      onSuccess?.()
     },
     onError: () => {
       toast({

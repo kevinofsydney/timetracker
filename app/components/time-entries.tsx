@@ -27,6 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/app/components/ui/table'
+import { AddShiftForm } from '@/app/components/add-shift-form'
 
 type ShiftType = 'STANDARD' | 'SUNDAY' | 'EMERGENCY' | 'OVERNIGHT'
 
@@ -53,6 +54,7 @@ export default function TimeEntries() {
   const [selectedConcert, setSelectedConcert] = useState<string>('')
   const [isClockInDialogOpen, setIsClockInDialogOpen] = useState(false)
   const [selectedShiftType, setSelectedShiftType] = useState<ShiftType>('STANDARD')
+  const [isAddShiftOpen, setIsAddShiftOpen] = useState(false)
 
   const { data: entries, isLoading: isLoadingEntries } = useQuery<TimeEntry[]>({
     queryKey: ['time-entries'],
@@ -131,52 +133,16 @@ export default function TimeEntries() {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Time Entries</h2>
-        <Dialog open={isClockInDialogOpen} onOpenChange={setIsClockInDialogOpen}>
+        <h2 className="text-xl font-semibold">Recent Time Entries</h2>
+        <Dialog open={isAddShiftOpen} onOpenChange={setIsAddShiftOpen}>
           <DialogTrigger asChild>
-            <Button disabled={!hasActiveConcerts}>
-              Clock In
-            </Button>
+            <Button>Add a Shift</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
-              <DialogTitle>Start Shift</DialogTitle>
+              <DialogTitle>Add Past Shift</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <Select value={selectedConcert} onValueChange={setSelectedConcert}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a concert" />
-                </SelectTrigger>
-                <SelectContent>
-                  {concerts?.map((concert) => (
-                    <SelectItem key={concert.id} value={concert.id}>
-                      {concert.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select 
-                value={selectedShiftType} 
-                onValueChange={(value: ShiftType) => setSelectedShiftType(value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select shift type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="STANDARD">Standard</SelectItem>
-                  <SelectItem value="SUNDAY">Sunday</SelectItem>
-                  <SelectItem value="EMERGENCY">Emergency</SelectItem>
-                  <SelectItem value="OVERNIGHT">Overnight</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button 
-                className="w-full" 
-                onClick={() => clockInMutation.mutate()}
-                disabled={!selectedConcert}
-              >
-                Start Shift
-              </Button>
-            </div>
+            <AddShiftForm onSuccess={() => setIsAddShiftOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
