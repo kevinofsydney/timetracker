@@ -22,7 +22,12 @@ export async function POST(request: Request) {
         shiftType: validatedData.shiftType,
       },
       include: {
-        concert: true,
+        concert: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     })
 
@@ -55,6 +60,7 @@ export async function GET(request: Request) {
       include: {
         concert: {
           select: {
+            id: true,
             name: true,
           },
         },
