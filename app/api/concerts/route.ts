@@ -29,14 +29,22 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await getServerSession(authOptions)
-    if (session?.user?.role !== 'ADMIN') {
+    if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
+    // Get the active parameter from the URL
+    const { searchParams } = new URL(request.url)
+    const activeOnly = searchParams.get('active') === 'true'
+
+    // Build the where clause based on the active parameter
+    const where = activeOnly ? { isActive: true } : {}
+
     const concerts = await prisma.concert.findMany({
+      where,
       orderBy: {
         createdAt: 'desc',
       },
