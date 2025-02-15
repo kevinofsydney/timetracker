@@ -7,8 +7,7 @@ import { prisma } from '@/lib/prisma'
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
@@ -17,10 +16,19 @@ export async function GET() {
         userId: session.user.id,
         clockOut: null,
       },
+      include: {
+        concert: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     })
 
     return NextResponse.json(activeEntry)
   } catch (error) {
-    return new NextResponse('Internal Error', { status: 500 })
+    console.error('Error fetching active time entry:', error)
+    return new NextResponse('Internal Server Error', { status: 500 })
   }
 } 
