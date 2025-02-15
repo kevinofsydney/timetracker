@@ -4,6 +4,21 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { format } from 'date-fns'
 import { useToast } from '@/app/components/ui/use-toast'
+import { Button } from '@/app/components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/app/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/app/components/ui/dialog'
 import {
   Table,
   TableBody,
@@ -13,18 +28,33 @@ import {
   TableRow,
 } from '@/app/components/ui/table'
 
+type ShiftType = 'STANDARD' | 'SUNDAY' | 'EMERGENCY' | 'OVERNIGHT'
+
 interface TimeEntry {
   id: string
   clockIn: string
   clockOut: string | null
   roundedHours: number | null
+  concert: {
+    name: string
+  }
+  shiftType: ShiftType
+}
+
+interface Concert {
+  id: string
+  name: string
+  isActive: boolean
 }
 
 export default function TimeEntries() {
   const { toast } = useToast()
   const queryClient = useQueryClient()
+  const [selectedConcert, setSelectedConcert] = useState<string>('')
+  const [isClockInDialogOpen, setIsClockInDialogOpen] = useState(false)
+  const [selectedShiftType, setSelectedShiftType] = useState<ShiftType>('STANDARD')
 
-  const { data: entries, isLoading, error } = useQuery<TimeEntry[]>({
+  const { data: entries, isLoading: isLoadingEntries } = useQuery<TimeEntry[]>({
     queryKey: ['time-entries'],
     queryFn: async () => {
       const response = await fetch('/api/time-entries')
@@ -33,8 +63,21 @@ export default function TimeEntries() {
     },
   })
 
+  const { data: concerts, isLoading: isLoadingConcerts } = useQuery<Concert[]>({
+    queryKey: ['active-concerts'],
+    queryFn: async () => {
+      const response = await fetch('/api/concerts?active=true')
+      if (!response.ok) throw new Error('Failed to fetch concerts')
+      return response.json()
+    },
+  })
+
   const clockInMutation = useMutation({
     mutationFn: async () => {
+      if (!selectedConcert) {
+        throw new Error('Please select a concert')
+      }
+
       const response = await fetch('/api/time-entries', {
         method: 'POST',
         headers: {
@@ -42,6 +85,8 @@ export default function TimeEntries() {
         },
         body: JSON.stringify({
           clockIn: new Date().toISOString(),
+          concertId: selectedConcert,
+          shiftType: selectedShiftType,
         }),
       })
       
@@ -65,6 +110,8 @@ export default function TimeEntries() {
         title: 'Success',
         description: 'Successfully clocked in',
       })
+      setIsClockInDialogOpen(false)
+      setSelectedConcert('')
     },
     onError: (error) => {
       toast({
@@ -75,24 +122,70 @@ export default function TimeEntries() {
     },
   })
 
-  if (error) {
-    return (
-      <div className="p-4 rounded-md bg-destructive/10 text-destructive">
-        <h3 className="font-semibold">Error</h3>
-        <p>{error.message}</p>
-      </div>
-    )
-  }
-
-  if (isLoading) {
+  if (isLoadingEntries || isLoadingConcerts) {
     return <div>Loading...</div>
   }
 
+  const hasActiveConcerts = concerts && concerts.length > 0
+
   return (
-    <div>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold">Time Entries</h2>
+        <Dialog open={isClockInDialogOpen} onOpenChange={setIsClockInDialogOpen}>
+          <DialogTrigger asChild>
+            <Button disabled={!hasActiveConcerts}>
+              Clock In
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Start Shift</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-4">
+              <Select value={selectedConcert} onValueChange={setSelectedConcert}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a concert" />
+                </SelectTrigger>
+                <SelectContent>
+                  {concerts?.map((concert) => (
+                    <SelectItem key={concert.id} value={concert.id}>
+                      {concert.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select 
+                value={selectedShiftType} 
+                onValueChange={(value: ShiftType) => setSelectedShiftType(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select shift type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="STANDARD">Standard</SelectItem>
+                  <SelectItem value="SUNDAY">Sunday</SelectItem>
+                  <SelectItem value="EMERGENCY">Emergency</SelectItem>
+                  <SelectItem value="OVERNIGHT">Overnight</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button 
+                className="w-full" 
+                onClick={() => clockInMutation.mutate()}
+                disabled={!selectedConcert}
+              >
+                Start Shift
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>Concert</TableHead>
+            <TableHead>Shift Type</TableHead>
             <TableHead>Clock In</TableHead>
             <TableHead>Clock Out</TableHead>
             <TableHead>Hours</TableHead>
@@ -102,6 +195,8 @@ export default function TimeEntries() {
         <TableBody>
           {entries?.map((entry) => (
             <TableRow key={entry.id}>
+              <TableCell>{entry.concert.name}</TableCell>
+              <TableCell>{entry.shiftType}</TableCell>
               <TableCell>
                 {format(new Date(entry.clockIn), 'PPp')}
               </TableCell>

@@ -1,3 +1,5 @@
+import { fontFamily } from "tailwindcss/defaultTheme"
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ['class'],
@@ -17,44 +19,60 @@ module.exports = {
     },
     extend: {
       colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
+        // Dracula theme colors
+        background: "#282a36",
+        currentLine: "#44475a",
+        foreground: "#f8f8f2",
+        comment: "#6272a4",
+        cyan: "#8be9fd",
+        green: "#50fa7b",
+        orange: "#ffb86c",
+        pink: "#ff79c6",
+        purple: "#bd93f9",
+        red: "#ff5555",
+        yellow: "#f1fa8c",
+
+        border: "#44475a",
+        input: "#44475a",
+        ring: "#bd93f9",
+        
+        // Semantic colors
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
+          DEFAULT: "#bd93f9",
+          foreground: "#282a36",
         },
         secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
+          DEFAULT: "#6272a4",
+          foreground: "#f8f8f2",
         },
         destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
+          DEFAULT: "#ff5555",
+          foreground: "#f8f8f2",
         },
         muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
+          DEFAULT: "#44475a",
+          foreground: "#6272a4",
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
+          DEFAULT: "#44475a",
+          foreground: "#f8f8f2",
         },
         popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
+          DEFAULT: "#282a36",
+          foreground: "#f8f8f2",
         },
         card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
+          DEFAULT: "#282a36",
+          foreground: "#f8f8f2",
         },
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        lg: '0.5rem',
+        md: 'calc(0.5rem - 2px)',
+        sm: 'calc(0.5rem - 4px)',
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)", ...fontFamily.sans],
       },
       keyframes: {
         'accordion-down': {

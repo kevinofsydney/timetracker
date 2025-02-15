@@ -107,9 +107,9 @@ export function ConcertList() {
         <TableHeader>
           <TableRow>
             <TableHead>Name</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead>Actions</TableHead>
+            <TableHead className="w-[100px]">Status</TableHead>
+            <TableHead className="w-[150px]">Created</TableHead>
+            <TableHead className="w-[250px]">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -117,30 +117,34 @@ export function ConcertList() {
             <TableRow key={concert.id}>
               <TableCell>{concert.name}</TableCell>
               <TableCell>
-                <Switch
-                  checked={concert.isActive}
-                  onCheckedChange={(checked: boolean) => toggleActive(concert.id, checked)}
-                />
+                <div className="flex items-center">
+                  <Switch
+                    checked={concert.isActive}
+                    onCheckedChange={(checked: boolean) => toggleActive(concert.id, checked)}
+                  />
+                </div>
               </TableCell>
               <TableCell>
                 {new Date(concert.createdAt).toLocaleDateString()}
               </TableCell>
-              <TableCell className="space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleActive(concert.id, !concert.isActive)}
-                >
-                  {concert.isActive ? 'Deactivate' : 'Activate'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => downloadReport(concert.id, concert.name)}
-                >
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Report
-                </Button>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => toggleActive(concert.id, !concert.isActive)}
+                  >
+                    {concert.isActive ? 'Deactivate' : 'Activate'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => downloadReport(concert.id, concert.name)}
+                  >
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Report
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}

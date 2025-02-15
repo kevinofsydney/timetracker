@@ -25,6 +25,7 @@ import { useToast } from '@/app/components/ui/use-toast'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/app/components/ui/tabs'
 import { ConcertManagement } from '@/app/components/concert-management'
 import { ConcertList } from '@/app/components/concert-list'
+import { TranslatorList } from '@/app/components/translator-list'
 
 interface TimeEntry {
   id: string
@@ -102,21 +103,24 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-      
-      <Tabs defaultValue="manage" className="w-full">
+    <div className="space-y-8">
+      <Tabs defaultValue="concerts" className="w-full">
         <TabsList>
+          <TabsTrigger value="concerts">Concerts</TabsTrigger>
+          <TabsTrigger value="translators">Translators</TabsTrigger>
           <TabsTrigger value="manage">Manage Concerts</TabsTrigger>
-          <TabsTrigger value="list">Concert List</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="concerts">
+          <ConcertList />
+        </TabsContent>
+        
+        <TabsContent value="translators">
+          <TranslatorList />
+        </TabsContent>
         
         <TabsContent value="manage">
           <ConcertManagement />
-        </TabsContent>
-        
-        <TabsContent value="list">
-          <ConcertList />
         </TabsContent>
       </Tabs>
     </div>

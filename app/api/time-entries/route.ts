@@ -11,22 +11,20 @@ export async function POST(request: Request) {
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const body = await request.json()
-    const validatedData = TimeEntrySchema.parse(body)
+    const json = await request.json()
+    const validatedData = TimeEntrySchema.parse(json)
 
     const timeEntry = await prisma.timeEntry.create({
       data: {
         userId: session.user.id,
-        shiftType: validatedData.shiftType,
         concertId: validatedData.concertId,
-        clockIn: new Date().toISOString(),
+        clockIn: new Date(validatedData.clockIn),
+        shiftType: validatedData.shiftType,
       },
       include: {
-        concert: true,
-        user: {
+        concert: {
           select: {
             name: true,
-            email: true,
           },
         },
       },
@@ -34,8 +32,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json(timeEntry)
   } catch (error) {
-    console.error('Error creating time entry:', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    console.error('Failed to create time entry:', error)
+    return new NextResponse('Failed to create time entry', { status: 500 })
   }
 }
 
@@ -58,8 +56,17 @@ export async function GET(request: Request) {
           lte: end ? new Date(end) : undefined,
         },
       },
-      include: {
-        concert: true,
+      select: {
+        id: true,
+        clockIn: true,
+        clockOut: true,
+        roundedHours: true,
+        shiftType: true,
+        concert: {
+          select: {
+            name: true,
+          },
+        },
         user: {
           select: {
             name: true,

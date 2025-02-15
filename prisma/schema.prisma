@@ -46,6 +46,7 @@ model Concert {
 model TimeEntry {
   id            String    @id @default(cuid())
   userId        String
+  concert       Concert   @relation(fields: [concertId], references: [id])
   concertId     String
   shiftType     ShiftType
   clockIn       DateTime
@@ -56,7 +57,6 @@ model TimeEntry {
   editedBy      String?
   editReason    String?
   user          User      @relation(fields: [userId], references: [id])
-  concert       Concert   @relation(fields: [concertId], references: [id])
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
