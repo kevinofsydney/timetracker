@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/app/components/ui/select'
 import { useToast } from '@/app/components/ui/use-toast'
+import { ConcertSelector } from '@/app/components/concert-selector'
 
 interface TimeEntry {
   id: string
@@ -22,10 +23,13 @@ interface TimeEntry {
   shiftType: 'STANDARD' | 'SUNDAY' | 'EMERGENCY' | 'OVERNIGHT'
   clockIn: string
   clockOut: string | null
+  concert: {
+    name: string
+  }
 }
 
 interface TimeTrackerProps {
-  activeEntry: TimeEntry | null
+  activeEntry?: TimeEntry | null
 }
 
 interface ApiError {
@@ -38,7 +42,8 @@ export function TimeTracker({ activeEntry }: TimeTrackerProps) {
   const { data: session } = useSession()
   const { toast } = useToast()
   const queryClient = useQueryClient()
-  const [shiftType, setShiftType] = useState<TimeEntry['shiftType']>('STANDARD')
+  const [selectedConcert, setSelectedConcert] = useState<string>('')
+  const [selectedShiftType, setSelectedShiftType] = useState<TimeEntry['shiftType']>('STANDARD')
 
   const handleError = (error: unknown) => {
     const message = error instanceof Error 
@@ -52,38 +57,51 @@ export function TimeTracker({ activeEntry }: TimeTrackerProps) {
     })
   }
 
-  const clockIn = useMutation({
+  const clockInMutation = useMutation({
     mutationFn: async () => {
+      if (!selectedConcert) {
+        throw new Error('Please select a concert')
+      }
+
       const response = await fetch('/api/time-entries', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          shiftType,
+          concertId: selectedConcert,
+          shiftType: selectedShiftType,
+          clockIn: new Date().toISOString(),
         }),
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to clock in')
+        throw new Error('Failed to clock in')
       }
 
       return response.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-entry'] })
+      queryClient.invalidateQueries({ queryKey: ['time-entries'] })
       toast({
         title: 'Success',
-        description: 'You have successfully clocked in',
+        description: 'Successfully clocked in',
+      })
+      setSelectedConcert('')
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to clock in',
+        variant: 'destructive',
       })
     },
-    onError: handleError
   })
 
-  const clockOut = useMutation({
+  const clockOutMutation = useMutation({
     mutationFn: async () => {
-      if (!activeEntry) throw new Error('No active entry found')
+      if (!activeEntry) return
 
       const response = await fetch(`/api/time-entries/${activeEntry.id}`, {
         method: 'PATCH',
@@ -96,20 +114,26 @@ export function TimeTracker({ activeEntry }: TimeTrackerProps) {
       })
 
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to clock out')
+        throw new Error('Failed to clock out')
       }
 
       return response.json()
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['active-entry'] })
+      queryClient.invalidateQueries({ queryKey: ['time-entries'] })
       toast({
         title: 'Success',
-        description: 'You have successfully clocked out',
+        description: 'Successfully clocked out',
       })
     },
-    onError: handleError
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to clock out',
+        variant: 'destructive',
+      })
+    },
   })
 
   if (!session) {
@@ -119,43 +143,54 @@ export function TimeTracker({ activeEntry }: TimeTrackerProps) {
   if (activeEntry) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">Current shift</p>
-            <p className="text-sm text-muted-foreground">
-              Started at {format(new Date(activeEntry.clockIn), 'h:mm a')}
-            </p>
-          </div>
-          <Button
-            variant="destructive"
-            onClick={() => clockOut.mutate()}
-            disabled={clockOut.isPending}
-          >
-            {clockOut.isPending ? 'Clocking out...' : 'Clock out'}
-          </Button>
-        </div>
+        <p>
+          Currently working on: <strong>{activeEntry.concert.name}</strong>
+        </p>
+        <p>
+          Clocked in at:{' '}
+          <strong>
+            {new Date(activeEntry.clockIn).toLocaleTimeString()}
+          </strong>
+        </p>
+        <Button 
+          onClick={() => clockOutMutation.mutate()}
+          disabled={clockOutMutation.isPending}
+        >
+          Clock Out
+        </Button>
       </div>
     )
   }
 
   return (
-    <div className="flex items-center gap-4">
-      <Select
-        value={shiftType}
-        onValueChange={(value) => setShiftType(value as TimeEntry['shiftType'])}
+    <div className="space-y-4">
+      <div className="grid gap-4">
+        <ConcertSelector
+          value={selectedConcert}
+          onChange={setSelectedConcert}
+          disabled={clockInMutation.isPending}
+        />
+        <Select
+          value={selectedShiftType}
+          onValueChange={(value: TimeEntry['shiftType']) => setSelectedShiftType(value)}
+          disabled={clockInMutation.isPending}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select shift type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="STANDARD">Standard</SelectItem>
+            <SelectItem value="SUNDAY">Sunday</SelectItem>
+            <SelectItem value="EMERGENCY">Emergency</SelectItem>
+            <SelectItem value="OVERNIGHT">Overnight</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <Button
+        onClick={() => clockInMutation.mutate()}
+        disabled={!selectedConcert || clockInMutation.isPending}
       >
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Select shift type" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="STANDARD">Standard</SelectItem>
-          <SelectItem value="SUNDAY">Sunday</SelectItem>
-          <SelectItem value="EMERGENCY">Emergency</SelectItem>
-          <SelectItem value="OVERNIGHT">Overnight</SelectItem>
-        </SelectContent>
-      </Select>
-      <Button onClick={() => clockIn.mutate()} disabled={clockIn.isPending}>
-        {clockIn.isPending ? 'Clocking in...' : 'Clock in'}
+        Clock In
       </Button>
     </div>
   )
