@@ -28,6 +28,8 @@ import {
   TableRow,
 } from '@/app/components/ui/table'
 import { AddShiftForm } from '@/app/components/add-shift-form'
+import { DeleteShiftDialog } from '@/app/components/delete-shift-dialog'
+import { useSession } from 'next-auth/react'
 
 type ShiftType = 'STANDARD' | 'SUNDAY' | 'EMERGENCY' | 'OVERNIGHT'
 
@@ -35,6 +37,7 @@ interface TimeEntry {
   id: string
   clockIn: string
   clockOut: string | null
+  rawHours: number | null
   roundedHours: number | null
   concert: {
     name: string
@@ -49,6 +52,7 @@ interface Concert {
 }
 
 export default function TimeEntries() {
+  const { data: session } = useSession()
   const { toast } = useToast()
   const queryClient = useQueryClient()
   const [selectedConcert, setSelectedConcert] = useState<string>('')
@@ -156,6 +160,7 @@ export default function TimeEntries() {
             <TableHead>Clock Out</TableHead>
             <TableHead>Hours</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -170,10 +175,19 @@ export default function TimeEntries() {
                 {entry.clockOut ? format(new Date(entry.clockOut), 'PPp') : '-'}
               </TableCell>
               <TableCell>
-                {entry.roundedHours ?? '-'}
+                {entry.rawHours ? entry.rawHours.toFixed(2) : '-'}
               </TableCell>
               <TableCell>
                 {entry.clockOut ? 'Completed' : 'Active'}
+              </TableCell>
+              <TableCell>
+                {entry.clockOut && (
+                  <DeleteShiftDialog
+                    shiftId={entry.id}
+                    clockIn={new Date(entry.clockIn)}
+                    clockOut={new Date(entry.clockOut)}
+                  />
+                )}
               </TableCell>
             </TableRow>
           ))}

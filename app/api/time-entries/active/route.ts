@@ -32,6 +32,9 @@ export async function GET() {
     return NextResponse.json(activeEntry)
   } catch (error) {
     console.error('Error fetching active time entry:', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    return new NextResponse(
+      JSON.stringify({ message: 'Internal Server Error', error: String(error) }), 
+      { status: 500 }
+    )
   }
 } 

@@ -62,4 +62,38 @@ export async function PATCH(
 
     return new NextResponse('Internal Error', { status: 500 })
   }
+}
+
+export async function DELETE(
+  req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.id) {
+      return new NextResponse('Unauthorized', { status: 401 })
+    }
+
+    const timeEntry = await prisma.timeEntry.findUnique({
+      where: {
+        id: params.id,
+        userId: session.user.id,
+      },
+    })
+
+    if (!timeEntry) {
+      return new NextResponse('Not found', { status: 404 })
+    }
+
+    await prisma.timeEntry.delete({
+      where: {
+        id: params.id,
+      },
+    })
+
+    return new NextResponse(null, { status: 204 })
+  } catch (error) {
+    return new NextResponse('Internal Error', { status: 500 })
+  }
 } 

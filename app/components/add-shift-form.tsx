@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { format } from 'date-fns'
-import { Calendar as CalendarIcon } from 'lucide-react'
+import { format, differenceInHours, differenceInMinutes } from 'date-fns'
+import { Calendar as CalendarIcon, AlertCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/app/components/ui/button'
 import { Calendar } from '@/app/components/ui/calendar'
@@ -33,6 +33,8 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { DateTimePicker } from "@/app/components/ui/date-time-picker"
+import { Card, CardContent } from "@/app/components/ui/card"
+import { Alert, AlertDescription } from "@/app/components/ui/alert"
 
 const formSchema = z.object({
   concertId: z.string().min(1, 'Please select a concert'),
@@ -46,6 +48,12 @@ const formSchema = z.object({
 }).refine(data => data.clockOut > data.clockIn, {
   message: "Clock out time must be after clock in time",
   path: ["clockOut"],
+}).refine(data => {
+  const minutes = differenceInMinutes(data.clockOut, data.clockIn)
+  return minutes <= 24 * 60 // 24 hours in minutes
+}, {
+  message: "Shift duration cannot exceed 24 hours",
+  path: ["clockOut"],
 });
 
 interface AddShiftFormProps {
@@ -55,6 +63,7 @@ interface AddShiftFormProps {
 export function AddShiftForm({ onSuccess }: AddShiftFormProps) {
   const { toast } = useToast()
   const queryClient = useQueryClient()
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
   })
@@ -66,19 +75,16 @@ export function AddShiftForm({ onSuccess }: AddShiftFormProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          concertId: values.concertId,
-          shiftType: values.shiftType,
-          clockIn: values.clockIn.toISOString(),
-          clockOut: values.clockOut.toISOString(),
-        }),
+        body: JSON.stringify(values),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to add shift')
+        const errorData = await response.json()
+        throw new Error(errorData.message || errorData.error || 'Failed to add shift')
       }
 
-      return response.json()
+      const data = await response.json()
+      return data
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['time-entries'] })
@@ -89,22 +95,39 @@ export function AddShiftForm({ onSuccess }: AddShiftFormProps) {
       form.reset()
       onSuccess?.()
     },
-    onError: () => {
+    onError: (error) => {
+      console.error('Add shift error:', error)
       toast({
-        title: 'Error',
-        description: 'Failed to add shift',
         variant: 'destructive',
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to add shift',
       })
     },
   })
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    addShiftMutation.mutate(values)
+  // Calculate hours worked when both dates are selected
+  const clockIn = form.watch('clockIn')
+  const clockOut = form.watch('clockOut')
+  
+  const calculateHours = () => {
+    if (!clockIn || !clockOut) return null
+    
+    const totalMinutes = differenceInMinutes(clockOut, clockIn)
+    const hours = Math.floor(totalMinutes / 60)
+    const minutes = totalMinutes % 60
+
+    return {
+      raw: `${hours}h ${minutes}m`,
+      totalMinutes
+    }
   }
+
+  const hoursWorked = calculateHours()
+  const isShiftTooLong = Boolean(hoursWorked?.totalMinutes && hoursWorked.totalMinutes > 24 * 60)
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit((values) => addShiftMutation.mutate(values))} className="space-y-4">
         <FormField
           control={form.control}
           name="concertId"
@@ -163,6 +186,8 @@ export function AddShiftForm({ onSuccess }: AddShiftFormProps) {
                     date={field.value}
                     setDate={field.onChange}
                     disabled={addShiftMutation.isPending}
+                    otherDate={form.watch('clockOut')}
+                    isClockOut={false}
                   />
                 </FormControl>
                 <FormMessage />
@@ -181,7 +206,8 @@ export function AddShiftForm({ onSuccess }: AddShiftFormProps) {
                     date={field.value}
                     setDate={field.onChange}
                     disabled={addShiftMutation.isPending}
-                    clockInDate={form.watch('clockIn')}
+                    otherDate={form.watch('clockIn')}
+                    isClockOut={true}
                   />
                 </FormControl>
                 <FormMessage />
@@ -190,7 +216,32 @@ export function AddShiftForm({ onSuccess }: AddShiftFormProps) {
           />
         </div>
 
-        <Button type="submit" disabled={addShiftMutation.isPending}>
+        {hoursWorked && (
+          <Card className={cn("mt-4", isShiftTooLong && "border-destructive")}>
+            <CardContent className="pt-4">
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground text-sm">Total Hours:</span>
+                <span className={cn("font-medium text-sm", isShiftTooLong && "text-destructive")}>
+                  {hoursWorked.raw}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {isShiftTooLong && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Shift duration cannot exceed 24 hours. Please adjust your times.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <Button 
+          type="submit" 
+          disabled={addShiftMutation.isPending || isShiftTooLong}
+        >
           Add Shift
         </Button>
       </form>
