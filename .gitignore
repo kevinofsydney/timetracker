@@ -6,3 +6,4 @@ node_modules
 .env
 scripts/create-admin.ts
 scripts/create-translator.ts
+.DS_Store

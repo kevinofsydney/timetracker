@@ -13,7 +13,7 @@ export async function GET(
       return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    const concertId = params.concertId
+    const { concertId } = params
 
     // Get all time entries for this concert
     const timeEntries = await prisma.timeEntry.findMany({
@@ -22,12 +22,8 @@ export async function GET(
         clockOut: { not: null }, // Only include completed entries
       },
       include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
+        user: true,
+        concert: true,
       },
       orderBy: {
         clockIn: 'asc',
@@ -36,10 +32,11 @@ export async function GET(
 
     // Generate CSV content
     const csvRows = [
-      ['Translator', 'Email', 'Clock In', 'Clock Out', 'Hours', 'Shift Type'],
+      ['Translator', 'Email', 'Concert', 'Clock In', 'Clock Out', 'Hours', 'Shift Type'],
       ...timeEntries.map(entry => [
         entry.user.name || 'Unknown',
         entry.user.email,
+        entry.concert.name,
         new Date(entry.clockIn).toLocaleString(),
         entry.clockOut ? new Date(entry.clockOut).toLocaleString() : '',
         entry.roundedHours?.toString() || '',
@@ -54,7 +51,10 @@ export async function GET(
     // Set headers for CSV download
     const headers = new Headers()
     headers.set('Content-Type', 'text/csv')
-    headers.set('Content-Disposition', 'attachment; filename=report.csv')
+    headers.set(
+      'Content-Disposition',
+      `attachment; filename=concert-report-${new Date().toISOString().split('T')[0]}.csv`
+    )
 
     return new NextResponse(csvContent, {
       headers,
